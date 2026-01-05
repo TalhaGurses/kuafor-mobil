@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [appts, setAppts] = useState<Appt[]>([]);
   const [staffId, setStaffId] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "completed" | "canceled">("all");
   const [msg, setMsg] = useState("");
   const [activeTab, setActiveTab] = useState<"appointments" | "calendar" | "reports">("appointments");
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
@@ -131,11 +132,17 @@ export default function Dashboard() {
   }, [router, loadAll]);
 
   const filtered = useMemo(() => {
-    if (staffId === "ALL") return appts;
-    return appts.filter(x => x.employee_id === staffId);
-  }, [appts, staffId]);
+    let result = appts;
+    if (staffId !== "ALL") {
+      result = result.filter(x => x.employee_id === staffId);
+    }
+    if (statusFilter !== "all") {
+      result = result.filter(x => x.status === statusFilter);
+    }
+    return result;
+  }, [appts, staffId, statusFilter]);
 
-  // KPI: gün/hafta/ay/yıl
+  // KPI: gün/hafta/ay/yıl - sadece scheduled ve completed randevular
   const kpi = useMemo(() => {
     const now = new Date();
     const dayStart = startOfDay(now), dayEnd = endOfDay(now);
@@ -153,9 +160,11 @@ export default function Dashboard() {
 
     function sumBetween(start: Date, end: Date) {
       let income = 0, expense = 0;
-      for (const x of filtered) {
+      for (const x of appts) {
+        // Sadece scheduled ve completed - iptal olanları sayma
+        if (x.status === "canceled") continue;
         const t = new Date(x.starts_at).getTime();
-        if (t >= start.getTime() && t < end.getTime() && x.status !== "canceled") {
+        if (t >= start.getTime() && t < end.getTime()) {
           income += Number(x.price || 0);
           expense += Number(x.cost || 0);
         }
@@ -169,7 +178,7 @@ export default function Dashboard() {
       month: sumBetween(monthStart, monthEnd),
       year: sumBetween(yearStart, yearEnd),
     };
-  }, [filtered]);
+  }, [appts]);
 
   async function addAppt() {
     setMsg("");
@@ -218,6 +227,21 @@ export default function Dashboard() {
     if (!confirm("Randevu silinsin mi?")) return;
     const res = await supabase.from("appointments").delete().eq("id", id);
     if (res.error) return setMsg(res.error.message);
+    await loadAll();
+  }
+
+  async function markComplete(id: string) {
+    const res = await supabase.from("appointments").update({ status: "completed" }).eq("id", id);
+    if (res.error) return setMsg(res.error.message);
+    setMsg("✅ Randevu tamamlandı olarak işaretlendi");
+    await loadAll();
+  }
+
+  async function markCanceled(id: string) {
+    if (!confirm("Randevu iptal edilsin mi?")) return;
+    const res = await supabase.from("appointments").update({ status: "canceled" }).eq("id", id);
+    if (res.error) return setMsg(res.error.message);
+    setMsg("❌ Randevu iptal edildi");
     await loadAll();
   }
 
@@ -358,11 +382,21 @@ export default function Dashboard() {
       </div>
 
       <div className="row" style={{ marginTop: 12 }}>
-        <div style={{ minWidth: 260, flex: 1 }}>
+        <div style={{ minWidth: 200, flex: 1 }}>
           <div className="label">Çalışan Filtresi</div>
           <select className="select" value={staffId} onChange={(e) => setStaffId(e.target.value)}>
             <option value="ALL">Tüm çalışanlar (Genel)</option>
             {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+
+        <div style={{ minWidth: 180 }}>
+          <div className="label">Durum Filtresi</div>
+          <select className="select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
+            <option value="all">Tüm Durumlar</option>
+            <option value="scheduled">Bekleyen</option>
+            <option value="completed">Tamamlanan</option>
+            <option value="canceled">İptal Edilen</option>
           </select>
         </div>
 
@@ -548,12 +582,23 @@ export default function Dashboard() {
                     <div>
                       <div style={{ fontWeight: 900 }}>
                         {a.customer_name} • <span className="mono">{a.price}₺</span>
+                        <span className={`badge mono ml-2 ${a.status === "completed" ? "badge-green" : a.status === "canceled" ? "badge-red" : "badge-yellow"}`} style={{ marginLeft: 8, fontSize: 10 }}>
+                          {a.status === "completed" ? "✅ TAMAMLANDI" : a.status === "canceled" ? "❌ İPTAL" : "⏳ BEKLİYOR"}
+                        </span>
                       </div>
                       <div className="small">
                         {a.service} • {new Date(a.starts_at).toLocaleString()} {a.phone ? `• ${a.phone}` : ""}
                       </div>
                     </div>
-                    <button className="btn2" onClick={() => delAppt(a.id)}>Sil</button>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {a.status === "scheduled" && (
+                        <button className="btn btn-sm btn-green" onClick={() => markComplete(a.id)} title="Tamamla">✓</button>
+                      )}
+                      {a.status === "scheduled" && (
+                        <button className="btn btn-sm btn-red" onClick={() => markCanceled(a.id)} title="İptal">✕</button>
+                      )}
+                      <button className="btn2 btn-sm" onClick={() => delAppt(a.id)}>Sil</button>
+                    </div>
                   </div>
                 </div>
               ))}

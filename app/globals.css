@@ -147,3 +147,15 @@ a{color:inherit; text-decoration:none}
   box-shadow:0 4px 12px rgba(201,162,77,.35);
 }
 .listItem{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+
+/* Durum Renkleri */
+.badge-green{background:#dcfce7;border-color:#86efac;color:#166534}
+.badge-red{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.badge-yellow{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+
+/* Küçük Butonlar */
+.btn-sm{padding:8px 10px;font-size:12px}
+.btn-green{background:#22c55e;color:#fff}
+.btn-green:hover{background:#16a34a}
+.btn-red{background:#ef4444;color:#fff}
+.btn-red:hover{background:#dc2622}
