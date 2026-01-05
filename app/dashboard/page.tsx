@@ -576,32 +576,77 @@ export default function Dashboard() {
             <div className="hr" />
 
             <div className="grid">
-              {filtered.slice(0, 25).map(a => (
-                <div key={a.id} className="card" style={{ padding: 12 }}>
-                  <div className="listItem">
-                    <div>
-                      <div style={{ fontWeight: 900 }}>
-                        {a.customer_name} • <span className="mono">{a.price}₺</span>
-                        <span className={`badge mono ml-2 ${a.status === "completed" ? "badge-green" : a.status === "canceled" ? "badge-red" : "badge-yellow"}`} style={{ marginLeft: 8, fontSize: 10 }}>
-                          {a.status === "completed" ? "✅ TAMAMLANDI" : a.status === "canceled" ? "❌ İPTAL" : "⏳ BEKLİYOR"}
-                        </span>
-                      </div>
-                      <div className="small">
-                        {a.service} • {new Date(a.starts_at).toLocaleString()} {a.phone ? `• ${a.phone}` : ""}
+              {/* Bekleyen Randevular */}
+              {filtered.filter(a => a.status === "scheduled").length > 0 && (
+                <>
+                  <div style={{ fontWeight: 900, fontSize: 14, color: "#92400e", marginTop: 8 }}>⏳ Bekleyen Randevular</div>
+                  {filtered.filter(a => a.status === "scheduled").slice(0, 25).map(a => (
+                    <div key={a.id} className="card" style={{ padding: 12, borderLeft: "4px solid #f59e0b" }}>
+                      <div className="listItem">
+                        <div>
+                          <div style={{ fontWeight: 900 }}>
+                            {a.customer_name} • <span className="mono">{a.price}₺</span>
+                          </div>
+                          <div className="small">
+                            {a.service} • {new Date(a.starts_at).toLocaleString()} {a.phone ? `• ${a.phone}` : ""}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button className="btn btn-sm btn-green" onClick={() => markComplete(a.id)} title="Tamamla">✓</button>
+                          <button className="btn btn-sm btn-red" onClick={() => markCanceled(a.id)} title="İptal">✕</button>
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 4 }}>
-                      {a.status === "scheduled" && (
-                        <button className="btn btn-sm btn-green" onClick={() => markComplete(a.id)} title="Tamamla">✓</button>
-                      )}
-                      {a.status === "scheduled" && (
-                        <button className="btn btn-sm btn-red" onClick={() => markCanceled(a.id)} title="İptal">✕</button>
-                      )}
-                      <button className="btn2 btn-sm" onClick={() => delAppt(a.id)}>Sil</button>
+                  ))}
+                </>
+              )}
+
+              {/* Tamamlanan Randevular */}
+              {filtered.filter(a => a.status === "completed").length > 0 && (
+                <>
+                  <div className="hr" />
+                  <div style={{ fontWeight: 900, fontSize: 14, color: "#166534" }}>✅ Tamamlanan Randevular</div>
+                  {filtered.filter(a => a.status === "completed").slice(0, 50).map(a => (
+                    <div key={a.id} className="card" style={{ padding: 12, borderLeft: "4px solid #22c55e", background: "#f0fdf4" }}>
+                      <div className="listItem">
+                        <div>
+                          <div style={{ fontWeight: 900 }}>
+                            {a.customer_name} • <span className="mono">{a.price}₺</span>
+                          </div>
+                          <div className="small">
+                            {a.service} • {new Date(a.starts_at).toLocaleString()} {a.phone ? `• ${a.phone}` : ""}
+                          </div>
+                        </div>
+                        <button className="btn2 btn-sm" onClick={() => delAppt(a.id)}>Sil</button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  ))}
+                </>
+              )}
+
+              {/* İptal Edilen Randevular */}
+              {filtered.filter(a => a.status === "canceled").length > 0 && (
+                <>
+                  <div className="hr" />
+                  <div style={{ fontWeight: 900, fontSize: 14, color: "#991b1b" }}>❌ İptal Edilen Randevular</div>
+                  {filtered.filter(a => a.status === "canceled").slice(0, 50).map(a => (
+                    <div key={a.id} className="card" style={{ padding: 12, borderLeft: "4px solid #ef4444", background: "#fef2f2" }}>
+                      <div className="listItem">
+                        <div>
+                          <div style={{ fontWeight: 900 }}>
+                            {a.customer_name} • <span className="mono">{a.price}₺</span>
+                          </div>
+                          <div className="small">
+                            {a.service} • {new Date(a.starts_at).toLocaleString()} {a.phone ? `• ${a.phone}` : ""}
+                          </div>
+                        </div>
+                        <button className="btn2 btn-sm" onClick={() => delAppt(a.id)}>Sil</button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
               {filtered.length === 0 && <div className="small">Bu filtrede randevu yok.</div>}
             </div>
           </div>
